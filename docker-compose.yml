@@ -1,0 +1,50 @@
+# Fully-local OSS stack for vrr_agent_open — no cloud, no cost.
+#   docker compose up -d      # postgres(+pgvector) · unity catalog · mlflow
+# MLflow is published 5001:5000 (macOS AirPlay holds 5000). Then:
+#   export MLFLOW_TRACKING_URI=http://localhost:5001
+#   make seed && make test && make app
+# That compose path is documented, not claimed verified end-to-end.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16          # Postgres 16 with pgvector preinstalled
+    environment:
+      POSTGRES_USER: vrr
+      POSTGRES_PASSWORD: vrr
+      POSTGRES_DB: vrr
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./src/vrr_agent_open/pipeline/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vrr"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  unitycatalog:
+    image: unitycatalog/unitycatalog:latest   # Unity Catalog OSS (Apache-2.0)
+    ports: ["8080:8080"]
+    # UC OSS uses an embedded H2 metastore by default; point it at Postgres via
+    # ./governance/uc.conf for a persistent catalog-of-record (see docs/design.md).
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    command: >-
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri postgresql://vrr:vrr@postgres:5432/vrr
+      --default-artifact-root /mlruns
+    # Host 5001 → container 5000. macOS AirPlay Receiver holds 5000 and answers 403,
+    # which made tracing look "off" while the server was fine. Internal listen port
+    # stays 5000. Point MLFLOW_TRACKING_URI at http://localhost:5001.
+    ports: ["5001:5000"]
+    volumes: ["mlruns:/mlruns"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  mlruns:

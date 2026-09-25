@@ -1,0 +1,39 @@
+# Databricks Apps manifest — the same FastAPI + React workbench, on the platform.
+#
+#   Lakebase (database resource)  → PGHOST/PGUSER/PGDATABASE/... are injected; the
+#                                   password is minted per connection (databricks_env.py)
+#   Model Serving endpoints        → narrator + embedder through /serving-endpoints
+#   Secrets                        → JWT signing key + demo password, never in this file
+#   Managed MLflow                 → MLFLOW_TRACKING_URI=databricks, one experiment
+command: ["python", "-m", "uvicorn", "vrr_agent_open.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+env:
+  - name: PYTHONPATH
+    value: src
+  - name: VRR_BOOTSTRAP
+    value: "1"
+  - name: VRR_LAKEBASE_INSTANCE
+    value: vrr-db
+  - name: VRR_LLM_PROVIDER
+    value: databricks
+  - name: VRR_DATABRICKS_MODEL
+    value: databricks-claude-sonnet-4-5
+  - name: VRR_EMBED_PROVIDER
+    value: databricks
+  - name: VRR_EMBED_MODEL
+    value: databricks-gte-large-en
+  - name: VRR_EMBED_DIM
+    value: "1024"
+  # 0.62 was measured for nomic-embed-text; gte-large-en scores differently. UNMEASURED —
+  # run scripts/calibrate_floor.py against this index and replace it.
+  - name: VRR_RETRIEVAL_MIN_SCORE
+    value: "0.55"
+  - name: VRR_KNOWLEDGE_DIR
+    value: /tmp/knowledge_uploads
+  - name: MLFLOW_TRACKING_URI
+    value: databricks
+  - name: VRR_MLFLOW_EXPERIMENT
+    value: /Shared/vrr-agent-open
+  - name: VRR_JWT_SECRET
+    valueFrom: jwt-secret
+  - name: VRR_DEMO_PASSWORD
+    valueFrom: demo-password

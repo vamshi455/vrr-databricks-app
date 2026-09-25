@@ -1,0 +1,50 @@
+[project]
+name = "vrr-agent-open"
+version = "0.1.0"
+description = "Open-source VRR Reasoning & Lineage agent — LangGraph + PostgreSQL/pgvector + Unity Catalog OSS + MLflow, all local."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "vamshi singam" }]
+dependencies = [
+    "psycopg[binary]>=3.2",       # PostgreSQL driver (data + compute)
+    "pgvector>=0.3",              # knowledge embeddings in Postgres
+    "langgraph>=0.2",            # agent orchestration
+    "langchain-core>=0.3",
+    "mlflow>=2.16",              # OSS tracing / eval / registry
+    "fastapi>=0.115",            # HTTP API the React workbench (web/) calls
+    "uvicorn[standard]>=0.30",   # ASGI server for it
+    "pyjwt>=2.9",                # OAuth2 bearer tokens — the role is a SIGNED claim
+    "bcrypt>=4.2",               # password hashing for vrr_agent.app_user
+    "python-multipart>=0.0.9",   # OAuth2 password grant is form-encoded, not JSON
+    "pydantic>=2.7",
+    "httpx>=0.27",              # LLM calls (Ollama / any OpenAI-compatible)
+    "pypdf>=4.2",                # PDF parsing for knowledge ingest
+    "python-dotenv>=1.0",        # .env → config (API keys never live in code)
+    "langchain-community>=0.3",  # document loaders (pdf/txt/html/docx/csv/web)
+    "langchain-text-splitters>=0.3",
+    "beautifulsoup4>=4.12",      # HTML + web loading
+    "docx2txt>=0.8",             # .docx loading
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+# Hosted narrators — BILLABLE, and never required: the stack runs fully local on Ollama.
+cloud = ["anthropic>=0.40", "openai>=1.50"]
+# Architecture PNGs (`make diagram`). Needs Graphviz on PATH: brew install graphviz.
+docs = ["diagrams>=0.23"]
+# Faster PDF parsing for bulk backfills (C library, same Document shape as pypdf).
+fastpdf = ["pymupdf>=1.24"]
+# Scanned PDFs, slides, mixed tables/figures. Large dependency tree + OCR binaries.
+complexdocs = ["unstructured[all-docs]>=0.15"]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

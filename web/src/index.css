@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tabular figures everywhere a number appears — a VRR column that jitters between rows
+   is harder to scan, and this app is mostly columns of numbers. */
+@layer base {
+  /*
+   * ONE lever for the size of the entire application.
+   *
+   * Every size in the app is already in rem — the six type tokens in tailwind.config.js
+   * and Tailwind's own spacing scale — so the root font-size scales type, padding, gaps
+   * and card widths together. That is exactly what browser zoom does, which is why
+   * setting this to 68% reproduces the appearance of viewing the old build at 68% zoom,
+   * at 100% zoom. Editing the six tokens instead would have shrunk the text while
+   * leaving the padding, and the app would have read as sparse rather than dense.
+   *
+   * `--ui-scale` is written to the element by `web/src/ui-scale.ts` from localStorage.
+   * The 68% default is a deliberate choice by the operator of this workbench; the
+   * fallback here is what applies before that script runs, so first paint is not a
+   * full-size flash.
+   *
+   * NOTE, stated because it is a real trade and not a detail: 68% puts `micro` at ~7.5px
+   * and `body` at ~8.2px, well under the 11px floor the 2026-07-31 audit set and under
+   * WCAG-comfortable body text. The Compact/Default/Large control in the header exists
+   * so that is recoverable per reader rather than baked in for everyone.
+   */
+  html {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: var(--ui-scale, 68%);
+  }
+  /* Set on <html> as well as <body>, so an over-scroll bounce shows the page ground
+     and not a strip of white. */
+  html, body { background: theme(colors.surface.base); color: theme(colors.content.primary); }
+  /* Dark form controls, scrollbars and native widgets. Without it the selects and
+     the scrollbar come back white and the theme falls apart at the edges. */
+  :root { color-scheme: dark; }
+  /* No shrink: at 0.95em, code inside an 11px caption fell to 10.45px. */
+  code { font-size: 1em; }
+
+  /* A visible focus ring on everything focusable, in one place.
+     The app had exactly two `focus:` rules across ~19 buttons, four selects and the chat
+     composer, so tabbing through it showed nothing at all — the top-priority failure in
+     any accessibility checklist, and the one that makes an approval chain unusable
+     without a mouse. `:focus-visible` rather than `:focus` so a click does not leave a
+     ring behind; `:where()` keeps specificity at zero so any component can still
+     override it deliberately. */
+  :where(a, button, select, input, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid theme(colors.brand.500);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  /* If it does something when clicked, say so on hover. */
+  :where(button, select, summary, [role="button"]):not(:disabled) { cursor: pointer; }
+  :where(button, select):disabled { cursor: not-allowed; }
+}
+
+/* The sweep lines on the pattern schematic march from injector to producer, because a
+   static line does not say which way anything is moving and that is the entire point of
+   the figure. Honoured only when the reader has not asked for less motion. */
+@layer components {
+  .sweep-flow { stroke-dasharray: 5 7; }
+  @media (prefers-reduced-motion: no-preference) {
+    .sweep-flow { animation: sweep-march 1.9s linear infinite; }
+  }
+  @keyframes sweep-march { to { stroke-dashoffset: -24; } }
+}
+
+/* Agent answers are markdown: bold figures, a sources footer, and the portfolio scan
+   returns a table. Scoped styles rather than @tailwindcss/typography — the drawer is
+   narrow and the plugin's default measure/margins are tuned for article width. */
+@layer components {
+  .prose-agent :where(p) { margin: 0.35rem 0; }
+  .prose-agent :where(p:first-child) { margin-top: 0; }
+  .prose-agent :where(p:last-child) { margin-bottom: 0; }
+  .prose-agent :where(strong) { font-weight: 600; color: #e8eef5; }
+  .prose-agent :where(em) { color: #8b9db0; font-style: normal; font-size: 0.92em; }
+  .prose-agent :where(ul, ol) { margin: 0.35rem 0; padding-left: 1.1rem; }
+  .prose-agent :where(ul) { list-style: disc; }
+  .prose-agent :where(ol) { list-style: decimal; }
+  .prose-agent :where(li) { margin: 0.1rem 0; }
+  .prose-agent :where(code) {
+    background: #222d3c; color: #cfe4f3; border-radius: 3px; padding: 0 3px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em;
+  }
+  .prose-agent :where(h1, h2, h3, h4) {
+    font-weight: 600; font-size: 0.95em; margin: 0.6rem 0 0.25rem;
+  }
+  .prose-agent :where(table) {
+    display: block; overflow-x: auto; font-size: 0.8em; margin: 0.4rem 0;
+    border-collapse: collapse; white-space: nowrap;
+  }
+  .prose-agent :where(th, td) { border: 1px solid #2f3b4d; padding: 2px 6px; }
+  .prose-agent :where(th) { background: #222d3c; font-weight: 600; }
+}

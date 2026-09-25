@@ -1,0 +1,23 @@
+# Databricks Apps installs this at deploy time (Python 3.11). Mirrors pyproject.toml's
+# runtime set plus the two the Databricks host needs: the SDK (Lakebase credentials,
+# serving auth) and the OpenAI client (Model Serving's OpenAI-compatible API).
+psycopg[binary]>=3.2
+pgvector>=0.3
+langgraph>=0.2
+langchain-core>=0.3
+mlflow>=3.1
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pyjwt>=2.9
+bcrypt>=4.2
+python-multipart>=0.0.9
+pydantic>=2.7
+httpx>=0.27
+pypdf>=4.2
+python-dotenv>=1.0
+langchain-community>=0.3
+langchain-text-splitters>=0.3
+beautifulsoup4>=4.12
+docx2txt>=0.8
+databricks-sdk>=0.60
+openai>=1.50

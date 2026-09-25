@@ -1,0 +1,109 @@
+# Architecture poster, D2 flavour — the closest match to the rounded-group, dark-canvas
+# style. Rendered by `make diagram` alongside the `diagrams` version; keep whichever
+# reads better and delete the other.
+#
+#   d2 --theme 200 --dark-theme 200 --layout elk docs/architecture.d2 docs/img/architecture-d2.svg
+#
+# Why this file exists in the repo rather than in a hosted editor: a picture drawn
+# somewhere else stops matching the code the moment the code changes, and nobody
+# notices. This one is text, so it diffs.
+#
+# Group colours carry the same meaning as the app: green deterministic, amber the gate,
+# purple the model, brown storage.
+
+# Left-to-right, like the reference. Without this ELK stacks the tiers vertically and
+# the poster comes out 1:8 — technically correct, unusable on a slide.
+direction: right
+
+vars: {
+  d2-config: {
+    layout-engine: elk
+    dark-theme-id: 200
+  }
+}
+
+classes: {
+  tier: {
+    style: {
+      stroke: "#3d444d"
+      stroke-width: 2
+      border-radius: 12
+      font-color: "#e6edf3"
+      fill: "#161b22"
+    }
+  }
+  det: { style.fill: "#12301f"; style.stroke: "#2f855a"; style.font-color: "#e6edf3" }
+  model: { style.fill: "#241b3a"; style.stroke: "#a371f7"; style.font-color: "#e6edf3" }
+  gate: { style.fill: "#3a2f12"; style.stroke: "#d29922"; style.font-color: "#e6edf3" }
+  store: { style.fill: "#2b2416"; style.stroke: "#b7791f"; style.font-color: "#e6edf3"
+           shape: cylinder }
+  ui: { style.fill: "#122b3d"; style.stroke: "#2d6b91"; style.font-color: "#e6edf3" }
+}
+
+analyst: Reservoir analyst { shape: person; style.fill: "#1b4664"; style.font-color: "#e6edf3" }
+
+workbench: WORKBENCH  web/ {
+  class: tier
+  views: "Portfolio · Report\nLineage · Approvals" { class: ui }
+  bot: Chatbot { class: ui }
+}
+
+api: "API  api/ — JWT bearer" {
+  class: tier
+  reads: "reads\n(public)" { class: ui }
+  writes: "writes + chat\n(bearer token)" { class: gate }
+}
+
+agent: AGENT  agent/ {
+  class: tier
+  router: "chat.py\nintent router" { class: model }
+  graph: "graph.py\nLangGraph StateGraph" { class: model }
+  tools: "tools.py\n15 deterministic tools" { class: det }
+}
+
+core: CORE  core/ — pure, no I/O {
+  class: tier
+  physics: "physics · decompose" { class: det }
+  rules: "anomaly · audit\nrecommend · approval" { class: det }
+  gate: "faithfulness\nGATE" { class: gate }
+}
+
+db: POSTGRESQL + pgvector {
+  class: tier
+  raw: vrr_raw { class: store }
+  curated: vrr_curated { class: store }
+  agentdb: vrr_agent { class: store }
+  knowledge: "reservoir_knowledge\nvector(768)" { class: store }
+}
+
+ops: OPS {
+  class: tier
+  mlflow: "MLflow\ntraces · eval · prompts" { class: model }
+  ollama: "Ollama\nqwen2.5:7b" { class: model }
+}
+
+analyst -> workbench.views
+analyst -> workbench.bot
+
+workbench.views -> api.reads: GET
+workbench.bot -> api.writes: "POST /chat\nBearer token" { style.stroke: "#d29922" }
+
+api.reads -> agent.tools { style.stroke: "#3fb950" }
+api.writes -> agent.router { style.stroke: "#3fb950" }
+
+agent.router -> agent.graph: agentic
+agent.router -> agent.tools: default
+agent.graph -> agent.tools
+agent.graph -> ops.ollama: "phrasing only" { style.stroke: "#a371f7"; style.stroke-dash: 4 }
+agent.graph -> core.gate: verify narration { style.stroke: "#d29922" }
+agent.router -> ops.mlflow: every span { style.stroke: "#a371f7"; style.stroke-dash: 2 }
+
+agent.tools -> core.physics { style.stroke: "#3fb950" }
+agent.tools -> core.rules { style.stroke: "#3fb950" }
+agent.tools -> db.curated: every number
+agent.tools -> db.raw
+agent.tools -> db.agentdb
+agent.tools -> db.knowledge: cosine search
+
+db.raw -> db.curated: core.physics
+db.agentdb -> core.rules: "learned rho" { style.stroke-dash: 4 }
