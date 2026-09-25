@@ -1,3 +1,10 @@
+> **Databricks App port.** This repository is the Databricks Apps deployment of
+> [vamshi455/vrr-agent-open](https://github.com/vamshi455/vrr-agent-open): Lakebase
+> replaces local Postgres, Model Serving replaces Ollama, managed MLflow replaces the
+> local server. Start with [docs/PROJECT_WALKTHROUGH.md](docs/PROJECT_WALKTHROUGH.md)
+> (every module and every decision) and [docs/databricks.md](docs/databricks.md)
+> (deploy and operate). The original README follows.
+
 # vrr_agent_open
 
 **A waterflood surveillance assistant where the model never does the arithmetic — and
